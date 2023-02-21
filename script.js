@@ -73,7 +73,6 @@ const inputClosePin = document.querySelector('.form__input--pin');
 
 const displayMovements = function (transactions) {
   containerMovements.innerHTML = ""
-
   transactions.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal'
     const html = `
@@ -85,9 +84,18 @@ const displayMovements = function (transactions) {
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
-// Calling the dysplayMovements function with account 1 object
 displayMovements(account1.movements);
 
+/*
+Reducing the movemenets array for balance 
+display 
+*/
+
+const calcDysplaytBalance = function (movements) {
+  const balance = movements.reduce((acc, mov) => acc + mov, 0);
+  labelBalance.textContent = `${balance} €`;
+}
+calcDysplaytBalance(account1.movements)
 
 /*
   Computing the user names from accounts.owner key...
@@ -107,10 +115,7 @@ const createUsername = function (accs) {
       .join('');
   });
 };
-//Passsing the accounts array to createUsername function
 createUsername(accounts);
-
-
 
 
 
@@ -118,7 +123,7 @@ createUsername(accounts);
 /////////////////////////////////////////////////
 // LECTURES
 
-/*
+
 const currencies = new Map([
   ['USD', 'United States dollar'],
   ['EUR', 'Euro'],
@@ -127,7 +132,6 @@ const currencies = new Map([
 
 const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 
-
 ////////////////map///////////////////////
 const eutToUsd = 1.1
 // Map function
@@ -135,29 +139,64 @@ const movementsUSD = movements.map(function (mov) {
   return mov * eutToUsd
 });
 
-console.log(movementsUSD);
-
 // Map using arrow function
 const movementsUSDArrow = movements.map(mov => mov * eutToUsd);
-
-console.log(movementsUSDArrow);
 
 // For of loop old fasion solution
 const movementsUSDFor = [];
 for (const mov of movements) movementsUSDFor.push(mov * eutToUsd);
 
-console.log(movementsUSDFor);
-
 /*
-  Making use of variable and index to make a 
+  Making use of variable and index to make a
   function ("arrow") return new array for to be used for
   DOM injection
 */
 
-/*
 const movementsDescriptions = movements.map((mov, i) =>
   `Movement ${i + 1} You ${mov > 0 ? 'deposited' : 'withdrew'} ${Math.abs(mov)}`
 );
 
-console.log(movementsDescriptions);
 /////////////////endmap//////////////////////*/
+
+
+/////////////////filter////////////////////////
+/*
+  Filtering for elements that satisfy a 
+  certain condition...
+  For our case deposits heve positive 
+  value while withdrawals have negative 
+  values...
+*/
+
+const deposit = movements.filter(function (mov) {
+  return mov > 0;
+})
+
+// withdrawals now with arrow function...
+const withdrawals = movements.filter(mov => mov < 0);
+
+/////////////////endfilter////////////////////
+
+
+//////////////////reduce//////////////////////
+/*
+  reduce method reduces the array into a 
+  single value by snowballing the accumulator!!!
+  !!! not that the accomulator has a second
+  parameter => initail value (here zet at '0')
+  ... the first argument of the call-back
+  function that is...
+*/
+
+const balance = movements.reduce((acc, cur) => acc + cur, 0);
+
+/////////////////endreduce////////////////////
+
+
+/////////////////MAX value////////////////////
+
+const max = movements.reduce((acc, mov) =>
+acc > mov ? acc : mov , movements[0]
+);
+console.log(max);
+/////////////////End MAX/////////////////////
