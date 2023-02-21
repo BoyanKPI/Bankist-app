@@ -61,32 +61,56 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+/*  
+  Clearing the container...
+  forEach callback function using the... 
+  variable (mov) and index (i)...
+  Is it deposit or withdrawal... using ternary operator..?
+  Creating the dynamic DOM element string to be inserted
+  into the movements container... 
+  Insert the DOM element string using nsertAdjacentHTML
+*/
 
-const displayMovements = function(transactions) {
-  // Clearing the container
+const displayMovements = function (transactions) {
   containerMovements.innerHTML = ""
 
-  /* The forEach callback function using the 
-    variable (mov) and index (i) */
-  transactions.forEach(function(mov, i) {
-
-    // Is it deposit or withdrawal... using ternary operator
+  transactions.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal'
-
-    /* Creating the dynamic DOM element string to be inserted into the 
-    movements container */
     const html = `
     <div class="movements__row">
       <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
       <div class="movements__value">${mov}</div>
     </div>
     `;
-    // Insert the DOM element string
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
-  // Calling the dysplayMovements function with account 1 object
-displayMovements(account1.movements)
+// Calling the dysplayMovements function with account 1 object
+displayMovements(account1.movements);
+
+
+/*
+  Computing the user names from accounts.owner key...
+  create the username property for each account...
+  assign all the methods to create the property value ==>
+  ==> transforming string to lowercase... split by ' ' 
+  and take (map) the first letter ([0]) of ewery word...
+  join by empty string (join(''))... beauty by methods
+*/
+
+const createUsername = function (accs) {
+  accs.forEach(function (acc) {
+    acc.username = acc.owner
+      .toLocaleLowerCase()
+      .split(' ')
+      .map((name) => name[0])
+      .join('');
+  });
+};
+//Passsing the accounts array to createUsername function
+createUsername(accounts);
+
+
 
 
 
@@ -94,6 +118,7 @@ displayMovements(account1.movements)
 /////////////////////////////////////////////////
 // LECTURES
 
+/*
 const currencies = new Map([
   ['USD', 'United States dollar'],
   ['EUR', 'Euro'],
@@ -102,4 +127,37 @@ const currencies = new Map([
 
 const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 
-/////////////////////////////////////////////////
+
+////////////////map///////////////////////
+const eutToUsd = 1.1
+// Map function
+const movementsUSD = movements.map(function (mov) {
+  return mov * eutToUsd
+});
+
+console.log(movementsUSD);
+
+// Map using arrow function
+const movementsUSDArrow = movements.map(mov => mov * eutToUsd);
+
+console.log(movementsUSDArrow);
+
+// For of loop old fasion solution
+const movementsUSDFor = [];
+for (const mov of movements) movementsUSDFor.push(mov * eutToUsd);
+
+console.log(movementsUSDFor);
+
+/*
+  Making use of variable and index to make a 
+  function ("arrow") return new array for to be used for
+  DOM injection
+*/
+
+/*
+const movementsDescriptions = movements.map((mov, i) =>
+  `Movement ${i + 1} You ${mov > 0 ? 'deposited' : 'withdrew'} ${Math.abs(mov)}`
+);
+
+console.log(movementsDescriptions);
+/////////////////endmap//////////////////////*/
