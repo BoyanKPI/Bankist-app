@@ -61,6 +61,40 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+// Event handler
+let currentAccount; /* defining the variable in outer scope */
+
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault(); //preventing form submitting for now
+  currentAccount = accounts
+  .find(acc => acc.username === inputLoginUsername.value);
+  // Optional chaining (?.) for handeling err to undefined
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+
+    // Display UI and message
+
+    labelWelcome.textContent = `Wellcome back, 
+    ${currentAccount.owner.split(' ')[0]}`;
+    containerApp.style.opacity = 100;
+
+    // Clear input fields
+    inputLoginUsername.value = inputLoginPin.value = "";
+    inputLoginPin.blur(); // unfocus carret
+
+    // Display movements
+
+    displayMovements(currentAccount.movements);
+
+    // Display balance
+
+    calcDysplaytBalance(currentAccount.movements);
+
+    // Display summary
+
+    calcDisplaySummary(currentAccount);
+  }
+})
+
 /*  
   Clearing the container...
   forEach callback function using the... 
@@ -70,7 +104,6 @@ const inputClosePin = document.querySelector('.form__input--pin');
   into the movements container... 
   Insert the DOM element string using nsertAdjacentHTML
 */
-
 const displayMovements = function (transactions) {
   containerMovements.innerHTML = ""
   transactions.forEach(function (mov, i) {
@@ -84,18 +117,38 @@ const displayMovements = function (transactions) {
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
-displayMovements(account1.movements);
 
 /*
 Reducing the movemenets array for balance 
 display 
 */
-
 const calcDysplaytBalance = function (movements) {
   const balance = movements.reduce((acc, mov) => acc + mov, 0);
   labelBalance.textContent = `${balance} €`;
 }
-calcDysplaytBalance(account1.movements)
+
+/*
+Calculating summary with methods chaining...
+creating a new array with + movements...
+reduce to a single number with .reduce acc...
+*/
+const calcDisplaySummary = function (obj) {
+  const income = obj.movements
+  .filter(mov => mov > 0)
+  .reduce((acc, mov) => acc + mov, 0);
+  labelSumIn.textContent = `${income} €`;
+  
+  const out = obj.movements
+  .filter(mov => mov < 0)
+  .reduce((acc, mov) => acc + mov, 0);
+  labelSumOut.textContent = `${Math.abs(out)} €`;
+  
+  const interest = obj.movements
+  .filter(mov => mov > 0)
+  .map(deposit => (deposit * obj.interestRate) / 100)
+  .reduce((acc, interest) => acc + interest, 0);
+  labelSumInterest.textContent = `${interest} €`;
+}
 
 /*
   Computing the user names from accounts.owner key...
@@ -148,7 +201,7 @@ for (const mov of movements) movementsUSDFor.push(mov * eutToUsd);
 
 /*
   Making use of variable and index to make a
-  function ("arrow") return new array for to be used for
+  function ("arrow") returns NEW!!! array for to be used for
   DOM injection
 */
 
@@ -156,9 +209,7 @@ const movementsDescriptions = movements.map((mov, i) =>
   `Movement ${i + 1} You ${mov > 0 ? 'deposited' : 'withdrew'} ${Math.abs(mov)}`
 );
 
-/////////////////endmap//////////////////////*/
-
-
+/////////////////endmap////////////////////////
 /////////////////filter////////////////////////
 /*
   Filtering for elements that satisfy a 
@@ -176,8 +227,6 @@ const deposit = movements.filter(function (mov) {
 const withdrawals = movements.filter(mov => mov < 0);
 
 /////////////////endfilter////////////////////
-
-
 //////////////////reduce//////////////////////
 /*
   reduce method reduces the array into a 
@@ -191,12 +240,35 @@ const withdrawals = movements.filter(mov => mov < 0);
 const balance = movements.reduce((acc, cur) => acc + cur, 0);
 
 /////////////////endreduce////////////////////
-
-
 /////////////////MAX value////////////////////
 
 const max = movements.reduce((acc, mov) =>
 acc > mov ? acc : mov , movements[0]
 );
-console.log(max);
-/////////////////End MAX/////////////////////
+
+
+//////////////////End MAX/////////////////////
+///////////////////FIND///////////////////////
+/*
+  Find method loops through the array and it 
+  finds and retrieves elements but in contrast
+  to filter methodit does not return a new
+  array but only returns the first element
+  that satisfies the condition of the call-back
+  function
+
+  Note that the filter method returns all 
+  satisfing conditions, while find method
+  only returns the first one.
+
+*/
+
+
+const firstWithdrawal = movements.find(mov => mov < 0)
+
+// find method with objects
+
+const accoutn = accounts.find(acc => acc.owner === 'Jessica Davis');
+
+
+/////////////////ENDFIND//////////////////////
