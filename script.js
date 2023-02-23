@@ -61,39 +61,6 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-// Event handler
-let currentAccount; /* defining the variable in outer scope */
-
-btnLogin.addEventListener('click', function (e) {
-  e.preventDefault(); //preventing form submitting for now
-  currentAccount = accounts
-  .find(acc => acc.username === inputLoginUsername.value);
-  // Optional chaining (?.) for handeling err to undefined
-  if (currentAccount?.pin === Number(inputLoginPin.value)) {
-
-    // Display UI and message
-
-    labelWelcome.textContent = `Wellcome back, 
-    ${currentAccount.owner.split(' ')[0]}`;
-    containerApp.style.opacity = 100;
-
-    // Clear input fields
-    inputLoginUsername.value = inputLoginPin.value = "";
-    inputLoginPin.blur(); // unfocus carret
-
-    // Display movements
-
-    displayMovements(currentAccount.movements);
-
-    // Display balance
-
-    calcDysplaytBalance(currentAccount.movements);
-
-    // Display summary
-
-    calcDisplaySummary(currentAccount);
-  }
-})
 
 /*  
   Clearing the container...
@@ -104,16 +71,22 @@ btnLogin.addEventListener('click', function (e) {
   into the movements container... 
   Insert the DOM element string using nsertAdjacentHTML
 */
-const displayMovements = function (transactions) {
-  containerMovements.innerHTML = ""
-  transactions.forEach(function (mov, i) {
+const displayMovements = function (movements, sort = false) {
+  containerMovements.innerHTML = "";
+  //sorting in ascending order... 
+  //using slice() to create a copy and not
+  //sort the original array
+  const movs = sort ? movements
+    .slice()
+    .sort((a, b) => a - b) : movements;
+    
+  movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal'
     const html = `
     <div class="movements__row">
       <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
       <div class="movements__value">${mov}</div>
-    </div>
-    `;
+    </div>`;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
@@ -122,9 +95,9 @@ const displayMovements = function (transactions) {
 Reducing the movemenets array for balance 
 display 
 */
-const calcDysplaytBalance = function (movements) {
-  const balance = movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${balance} €`;
+const calcDysplaytBalance = function (acc) {
+  acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
+  labelBalance.textContent = `${acc.balance} €`;
 }
 
 /*
@@ -157,8 +130,7 @@ const calcDisplaySummary = function (obj) {
   ==> transforming string to lowercase... split by ' ' 
   and take (map) the first letter ([0]) of ewery word...
   join by empty string (join(''))... beauty by methods
-*/
-
+  */
 const createUsername = function (accs) {
   accs.forEach(function (acc) {
     acc.username = acc.owner
@@ -170,105 +142,111 @@ const createUsername = function (accs) {
 };
 createUsername(accounts);
 
+/*
+  Update UI function
+*/
+const updateUI = function (acc) {
+      // Display movements
+      displayMovements(acc.movements);
+      // Display balance
+      calcDysplaytBalance(acc);
+      // Display summary
+      calcDisplaySummary(acc);
+}
 
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// LECTURES
-
-
-const currencies = new Map([
-  ['USD', 'United States dollar'],
-  ['EUR', 'Euro'],
-  ['GBP', 'Pound sterling'],
-]);
-
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
-
-////////////////map///////////////////////
-const eutToUsd = 1.1
-// Map function
-const movementsUSD = movements.map(function (mov) {
-  return mov * eutToUsd
+// Event handlers
+let currentAccount; /* defining the variable in outer scope */
+/*
+  Login
+*/
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault(); //preventing form submitting for now
+  currentAccount = accounts
+    .find(acc => acc.username === inputLoginUsername.value);
+  // Optional chaining (?.) for handeling err to undefined
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+    // Display UI and message
+    labelWelcome.textContent = `Wellcome back, 
+    ${currentAccount.owner.split(' ')[0]}`;
+    containerApp.style.opacity = 100;
+    // Clear input fields
+    inputLoginUsername.value = inputLoginPin.value = "";
+    inputLoginPin.blur(); // unfocus carret
+    // update UI
+    updateUI(currentAccount);
+  }
 });
 
-// Map using arrow function
-const movementsUSDArrow = movements.map(mov => mov * eutToUsd);
-
-// For of loop old fasion solution
-const movementsUSDFor = [];
-for (const mov of movements) movementsUSDFor.push(mov * eutToUsd);
+/*
+  Transfer money
+*/
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const recieverAcc = accounts
+    .find(acc => acc.username === inputTransferTo.value);
+  // Clear input fileds
+  inputTransferAmount.value = inputTransferTo.value = '';
+  if (amount > 0
+    && recieverAcc
+    && currentAccount.balance >= amount
+    && recieverAcc?.username !== currentAccount.username) {
+  // add -amount to current account
+    currentAccount.movements.push(-amount);
+  // add amount to reciever accoutn
+    recieverAcc.movements.push(amount);
+    // update UI
+    updateUI(currentAccount);
+}
+});
 
 /*
-  Making use of variable and index to make a
-  function ("arrow") returns NEW!!! array for to be used for
-  DOM injection
+  Request a loan, only it the acc has atleast one
+  deposit with atleast 10% of the requested loan
+  amount.
 */
-
-const movementsDescriptions = movements.map((mov, i) =>
-  `Movement ${i + 1} You ${mov > 0 ? 'deposited' : 'withdrew'} ${Math.abs(mov)}`
-);
-
-/////////////////endmap////////////////////////
-/////////////////filter////////////////////////
-/*
-  Filtering for elements that satisfy a 
-  certain condition...
-  For our case deposits heve positive 
-  value while withdrawals have negative 
-  values...
-*/
-
-const deposit = movements.filter(function (mov) {
-  return mov > 0;
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputLoanAmount.value);
+  if (amount > 0
+    && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
+    // Add movement
+    currentAccount.movements.push(amount);
+    //Update UI
+    updateUI(currentAccount);
+  }
+  //Clear input field
+  inputLoanAmount.value = '';
 })
 
-// withdrawals now with arrow function...
-const withdrawals = movements.filter(mov => mov < 0);
-
-/////////////////endfilter////////////////////
-//////////////////reduce//////////////////////
 /*
-  reduce method reduces the array into a 
-  single value by snowballing the accumulator!!!
-  !!! not that the accomulator has a second
-  parameter => initail value (here zet at '0')
-  ... the first argument of the call-back
-  function that is...
+  Close account
 */
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+  if (currentAccount.username === inputCloseUsername.value
+    && currentAccount.pin === Number(inputClosePin.value)) { 
+      
+    // finding the index, first one that matches
+    const index = accounts.findIndex(acc =>
+      acc.username === currentAccount.username)
+    // deleting the array element coresponding to the index
+    inputCloseUsername.value = inputClosePin.value = '';
+    labelWelcome.textContent = `Sorry to se you go, 
+    ${currentAccount.owner.split(' ')[0]}`;
+    accounts.splice(index, 1);
+    //Hide UI
+    containerApp.style.opacity = 0;  
+    }
+})
 
-const balance = movements.reduce((acc, cur) => acc + cur, 0);
-
-/////////////////endreduce////////////////////
-/////////////////MAX value////////////////////
-
-const max = movements.reduce((acc, mov) =>
-acc > mov ? acc : mov , movements[0]
-);
-
-
-//////////////////End MAX/////////////////////
-///////////////////FIND///////////////////////
 /*
-  Find method loops through the array and it 
-  finds and retrieves elements but in contrast
-  to filter methodit does not return a new
-  array but only returns the first element
-  that satisfies the condition of the call-back
-  function
-
-  Note that the filter method returns all 
-  satisfing conditions, while find method
-  only returns the first one.
-
+  Sorting call and state checking for two
+  way functioning of a sort state
 */
-
-
-const firstWithdrawal = movements.find(mov => mov < 0)
-
-// find method with objects
-
-const accoutn = accounts.find(acc => acc.owner === 'Jessica Davis');
-
-
-/////////////////ENDFIND//////////////////////
+let sorted = false;
+btnSort.addEventListener('click', function (e) {
+  e.preventDefault();
+  displayMovements(currentAccount.movements, !sorted);
+  sorted = !sorted;
+})
