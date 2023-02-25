@@ -128,6 +128,7 @@ const displayMovements = function (acc, sort = false) {
   });
 };
 
+
 /*
 Reducing the movemenets array for balance 
 display 
@@ -136,6 +137,7 @@ const calcDysplaytBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
   labelBalance.textContent = `${acc.balance.toFixed(2)} €`;
 }
+
 
 /*
 Calculating summary with methods chaining...
@@ -160,6 +162,7 @@ const calcDisplaySummary = function (obj) {
   labelSumInterest.textContent = `${interest.toFixed(2)} €`;
 }
 
+
 /*
   Computing the user names from accounts.owner key...
   create the username property for each account...
@@ -179,6 +182,7 @@ const createUsername = function (accs) {
 };
 createUsername(accounts);
 
+
 /*
   Update UI function
 */
@@ -191,8 +195,42 @@ const updateUI = function (acc) {
       calcDisplaySummary(acc);
 }
 
-// Event handlers
-let currentAccount; /* defining the variable in outer scope */
+
+/*
+  Timer function
+*/
+
+const startLogoutTimer = function(){
+
+    const tick = function(){
+    // Implement minutes
+    const min =String(Math.trunc(time / 60))
+    .padStart(2, 0) ;
+    const sec = String(time % 60).padStart(2, 0);
+    // In each call, print the remaining time ti UI
+    labelTimer.textContent = `${min}:${sec}`;
+    // When 0 seconds, stop timer and log out user
+    if(time===0){
+      clearInterval(timer);
+      labelWelcome.textContent = `Log in to ger started`
+      containerApp.style.opacity = 0;
+    }
+    // Decrease time for 1
+    time--
+  }
+  // Set time to 5 minutes
+  let time = 300;
+  tick();
+  // Call the timer every second
+  const timer = setInterval(tick ,1000)
+  return timer;
+}
+
+
+//////////////////// Event handlers
+
+let currentAccount, timer; /* defining the variable in outer scope */
+
 
 /*
 Date as of today
@@ -205,6 +243,7 @@ const year = now.getFullYear();
 const hour = `${now.getHours()}`.padStart(2, 0);
 const min = `${now.getMinutes()}`.padStart(2, 0);
 labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
+
 
 /*
   Login
@@ -222,10 +261,14 @@ btnLogin.addEventListener('click', function (e) {
     // Clear input fields
     inputLoginUsername.value = inputLoginPin.value = "";
     inputLoginPin.blur(); // unfocus carret
+    // Start timer
+    if(timer) clearInterval(timer);
+    timer = startLogoutTimer();
     // update UI
     updateUI(currentAccount);
   }
 });
+
 
 /*
   Transfer money
@@ -252,8 +295,12 @@ btnTransfer.addEventListener('click', function (e) {
     .push(new Date().toISOString());
   // update UI
     updateUI(currentAccount);
+  // Reset timer
+  clearInterval(timer);
+  timer = startLogoutTimer();
 }
 });
+
 
 /*
   Request a loan, only it the acc has atleast one
@@ -265,17 +312,22 @@ btnLoan.addEventListener('click', function (e) {
   const amount = Number(inputLoanAmount.value);
   if (amount > 0
     && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    // Add movement
-    currentAccount.movements.push(amount);
-    // Add transfer date
-    currentAccount.movementsDates
-    .push(new Date().toISOString());
-    //Update UI
-    updateUI(currentAccount);
+    setTimeout(function() {    
+        // Add movement
+        currentAccount.movements.push(amount);
+        // Add transfer date
+        currentAccount.movementsDates
+        .push(new Date().toISOString());
+        //Update UI
+        updateUI(currentAccount)},2500);
+          // Reset timer
+        clearInterval(timer);
+        timer = startLogoutTimer();
   }
   //Clear input field
   inputLoanAmount.value = '';
 })
+
 
 /*
   Close account
@@ -297,6 +349,7 @@ btnClose.addEventListener('click', function (e) {
     containerApp.style.opacity = 0;  
     }
 })
+
 
 /*
   Sorting call and state checking for two
